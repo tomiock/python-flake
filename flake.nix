@@ -89,7 +89,7 @@ EOF
               echo "No requirements.txt found. Skipping package installation."
               fi
 
-              if [ ! -f flake.nix]; then
+              if [ ! -f flake.nix ]; then
               echo "Type 'install-template' to install this flake template in the current directory"
               fi
               '';
