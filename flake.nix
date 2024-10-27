@@ -40,7 +40,6 @@ EOF
             echo "Creating .gitignore..."
             cat > .gitignore << 'EOF'
 .venv/
-result
 EOF
           fi
 
