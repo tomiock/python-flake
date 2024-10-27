@@ -32,13 +32,21 @@
           echo "Installing Python flake template..."
           # Create a new writable file with the content
           cat > flake.nix << 'EOF'
-                    ${flakeContent}
+''${flakeContent}
+EOF
+
+          # Create .gitignore if it doesn't exist
+          if [ ! -f .gitignore ]; then
+            echo "Creating .gitignore..."
+            cat > .gitignore << 'EOF'
+.venv/
+result
 EOF
           fi
 
           echo "Template installed successfully!"
           echo "You can now use 'nix develop' in this directory."
-                '';
+        '';
             in
                 {
                 devShells.default = pkgs.mkShell {
