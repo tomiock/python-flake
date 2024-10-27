@@ -18,8 +18,11 @@
                     stdenv.cc.cc
                 ];
 
-                # Template content as a string
-                flakeContent = builtins.readFile ./flake.nix;
+                # Define a separate file for the flake template to avoid embedding issues
+                flakeContentFile = pkgs.writeTextFile {
+                    name = "flake-template";
+                    text = builtins.readFile ./flake.nix;
+                };
 
                 # Script to install the flake template
                 installScript = pkgs.writeScriptBin "install-template" ''
@@ -30,10 +33,8 @@
           fi
 
           echo "Installing Python flake template..."
-          # Create a new writable file with the content
-          cat > flake.nix << 'EOF'
-''${flakeContent}
-EOF
+          # Copy flake content from the template file
+          cp ${flakeContentFile} flake.nix
 
           # Create .gitignore if it doesn't exist
           if [ ! -f .gitignore ]; then
@@ -46,7 +47,7 @@ EOF
 
           echo "Template installed successfully!"
           echo "You can now use 'nix develop' in this directory."
-        '';
+                '';
             in
                 {
                 devShells.default = pkgs.mkShell {
@@ -54,13 +55,9 @@ EOF
                         pythonPackages.matplotlib
                         pythonPackages.numpy
                         pythonPackages.pandas
-
                         pythonPackages.venvShellHook
                         pythonPackages.ipykernel
-
                         pkgs.uv # pip alternative
-                        # use `uv pip install` to get pythonPackages
-
                         installScript
                     ];
 
