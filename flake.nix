@@ -34,13 +34,6 @@
           cat > flake.nix << 'EOF'
                     ${flakeContent}
 EOF
-
-          # Create .gitignore if it doesn't exist
-          if [ ! -f .gitignore ]; then
-            echo "Creating .gitignore..."
-            cat > .gitignore << 'EOF'
-.venv/
-EOF
           fi
 
           echo "Template installed successfully!"
