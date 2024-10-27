@@ -24,8 +24,8 @@
                     text = builtins.readFile ./flake.nix;
                 };
 
-                # Script to install the flake template
-                installScript = pkgs.writeScriptBin "install-template" ''
+        # Script to install the flake template
+        installScript = pkgs.writeScriptBin "install-template" ''
           #!${pkgs.bash}/bin/bash
           if [ -f flake.nix ]; then
             echo "flake.nix already exists in current directory. Aborting."
@@ -33,8 +33,9 @@
           fi
 
           echo "Installing Python flake template..."
-          # Copy flake content from the template file
-          cp ${flakeContentFile} flake.nix
+          # Copy flake content from the template file to make it writable
+          cp ${flakeContentFile} ./flake.nix
+          chmod +w ./flake.nix
 
           # Create .gitignore if it doesn't exist
           if [ ! -f .gitignore ]; then
@@ -47,7 +48,7 @@ EOF
 
           echo "Template installed successfully!"
           echo "You can now use 'nix develop' in this directory."
-                '';
+        '';
             in
                 {
                 devShells.default = pkgs.mkShell {
