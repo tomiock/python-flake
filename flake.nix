@@ -39,9 +39,9 @@
           if [ ! -f .gitignore ]; then
             echo "Creating .gitignore..."
             cat > .gitignore << 'EOF'
-.venv/
-result
-EOF
+            .venv/
+            result
+            EOF
           fi
           
           echo "Template installed successfully!"
@@ -58,21 +58,18 @@ EOF
             
             pythonPackages.venvShellHook
             pythonPackages.ipykernel
-            pythonPackages.jupyterlab
             
-            # Add the install script to the shell
+            pkgs.uv # pip alternative
+            # use `uv pip install` to get pythonPackages
+
             installScript
           ];
 
           buildInputs = with pkgs; [
             bashInteractive
-            readline
-            libffi
             openssl
             git
-            openssh
             rsync
-            pkg-config
             zlib
             uv
           ];
