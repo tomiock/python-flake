@@ -42,6 +42,8 @@
             echo "Creating .gitignore..."
             cat > .gitignore << 'EOF'
 .venv/
+__pycache__/
+env/
 result
 EOF
           fi
