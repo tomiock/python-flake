@@ -42,9 +42,11 @@
             echo "Creating .gitignore..."
             cat > .gitignore << 'EOF'
 .venv/
+.idea/
 __pycache__/
 env/
 result
+**/*.pyc
 EOF
           fi
 
@@ -57,7 +59,6 @@ EOF
                     packages = with pkgs; [
                         pythonPackages.matplotlib
                         pythonPackages.numpy
-                        pythonPackages.pandas
                         pythonPackages.venvShellHook
                         pythonPackages.ipykernel
                         pkgs.uv # pip alternative
