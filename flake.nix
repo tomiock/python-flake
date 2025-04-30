@@ -47,6 +47,12 @@ __pycache__/
 env/
 result
 **/*.pyc
+
+# DL related
+data/
+wandb/
+outputs/
+
 EOF
           fi
 
@@ -59,6 +65,7 @@ EOF
                     packages = with pkgs; [
                         pythonPackages.matplotlib
                         pythonPackages.numpy
+
                         pythonPackages.venvShellHook
                         pythonPackages.ipykernel
                         pkgs.uv # pip alternative
