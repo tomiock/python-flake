@@ -69,9 +69,6 @@ EOF
           packages = with pkgs; [
             python 
 
-            pythonPackages.torch
-            pythonPackages.torchvision
-
             pythonPackages.matplotlib
             pythonPackages.numpy
             pythonPackages.ipykernel
