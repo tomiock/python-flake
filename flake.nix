@@ -18,13 +18,11 @@
           stdenv.cc.cc
         ];
 
-        # Define a separate file for the flake template to avoid embedding issues
         flakeContentFile = pkgs.writeTextFile {
           name = "flake-template";
           text = builtins.readFile ./flake.nix;
         };
 
-        # Script to install the flake template
         installScript = pkgs.writeScriptBin "install-template" ''
           #!${pkgs.bash}/bin/bash
           set -e # Exit on error
@@ -62,27 +60,25 @@ EOF
           echo "You can now use 'nix develop' in this directory."
         '';
 
-        # Define the name of the virtual env directory
         venvDir = ".venv";
 
       in
       {
         devShells.default = pkgs.mkShell {
-          # venvShellHook needs to be listed here to modify the shell startup
-          venvDir = venvDir; # Tell venvShellHook which directory to activate
+          venvDir = venvDir; # directory to be activated automatically
           packages = with pkgs; [
-            # Python interpreter itself
             python 
-            
-            # The hook responsible for automatic activation!
-            pythonPackages.venvShellHook 
 
-            # Nix-provided Python packages
+            pythonPackages.torch
+            pythonPackages.torchvision
+
             pythonPackages.matplotlib
             pythonPackages.numpy
             pythonPackages.ipykernel
 
             # Tools
+            pythonPackages.venvShellHook 
+
             uv 
             git
             rsync
@@ -99,7 +95,6 @@ EOF
           # This hook runs BEFORE the interactive shell starts.
           # Its job now is to PREPARE the environment.
           shellHook = ''
-            # Exit on error
             set -e 
             
             # Set SOURCE_DATE_EPOCH 
@@ -116,30 +111,50 @@ EOF
               echo "Creating Python virtual environment using uv in $VENV_DIR..."
               # Create the venv using uv, pointing to the Nix-provided Python
               ${pkgs.uv}/bin/uv venv -p ${python}/bin/python3.12 "$VENV_DIR" 
-              # No need to activate here; venvShellHook will do it later.
               echo "Virtual environment created."
             else
               echo "Using existing virtual environment in $VENV_DIR"
             fi
+            
+            set +e 
 
-            # Install/sync packages from requirements.txt using uv if it exists
-            # We need to temporarily activate *within this script* to ensure
-            # uv installs into the correct venv, especially if PATH isn't
-            # immediately updated in this non-interactive hook context.
-            # Alternatively, explicitly tell uv where the venv is if supported,
-            # but sourcing activate is reliable here for the install step.
             if [ -f requirements.txt ]; then
-              echo "Syncing environment with requirements.txt using uv..."
+              echo "Attempting to sync environment with requirements.txt using uv..."
               # Temporarily activate for the install command within this hook
-              source "$VENV_DIR/bin/activate"
-              ${pkgs.uv}/bin/uv pip sync requirements.txt
-              # Deactivate after install (optional, cleans up this script's env)
-              deactivate 
+              # Ensure the activate script exists before sourcing
+              if [ -f "$VENV_DIR/bin/activate" ]; then
+                  source "$VENV_DIR/bin/activate"
+              else
+                  echo "WARNING: Activation script $VENV_DIR/bin/activate not found. Skipping package sync."
+                  SKIP_SYNC=1 
+              fi
+
+              # Only run sync if activation succeeded
+              if [ -z "$SKIP_SYNC" ]; then
+                  ${pkgs.uv}/bin/uv pip sync requirements.txt
+                  SYNC_EXIT_CODE=$? # Capture exit code
+
+                  # Deactivate the temporary activation within the hook
+                  # Check if deactivate function exists before calling (robustness)
+                  if command -v deactivate > /dev/null; then
+                      deactivate
+                  fi
+
+                  if [ $SYNC_EXIT_CODE -ne 0 ]; then
+                      echo ""
+                      echo "WARNING: 'uv pip sync requirements.txt' failed (exit code $SYNC_EXIT_CODE)."
+                      echo "Your Nix shell is ready, but Python packages may be missing or incorrect."
+                      echo "Check error messages above, requirements.txt, and network connection."
+                      echo "You might need to run 'uv pip sync requirements.txt' manually."
+                      echo ""
+                  else
+                      echo "Environment sync with requirements.txt successful."
+                  fi
+              fi # End check for SKIP_SYNC
             else
               echo "No requirements.txt found. Skipping package installation/sync."
             fi
 
-            # Reminder for the template installation
             if [ ! -f flake.nix ]; then
               echo "---------------------------------------------------------------------"
               echo "This is a temporary shell. To make it persistent for this project,"
@@ -147,14 +162,10 @@ EOF
               echo "---------------------------------------------------------------------"
             fi
 
-            # Message indicating setup is done (before venvShellHook activates)
             echo "Nix shell environment configured. venvShellHook will now activate $VENV_DIR."
           '';
 
-          # postShellHook remains the same: Link Nix packages into the venv
-          # This runs after shellHook but before the final interactive shell is fully ready.
           postShellHook = ''
-            # Use the variable defined in 'let' block
             VENV_DIR="${venvDir}" 
             
             # Ensure the target directory exists before creating symlinks
@@ -165,7 +176,6 @@ EOF
           '';
         };
 
-        # Expose the template installation as a package
         packages.default = installScript;
       }
     );
